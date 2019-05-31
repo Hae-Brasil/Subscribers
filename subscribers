@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Author: Matheus Santana
+# Team: [HAE]Hazardous Hacking
+# Version: 1.0
+
+printInformation(){
+	clear
+	echo -e "++ INSCRITOS EM TEMPO REAL ++"
+	figlet -f small.flf $subs
+	echo "+++++++++++++++++++++++++++++++"
+	echo "CANAL: $name  | `date +%H:%M`"
+}
+
+trap ctrl_c INT
+name=$(curl -s $2 | grep twitter:title | cut -d'"' -f4)
+subs_init=$(curl -s $2 | grep "yt-subscription-button-subscriber-count-branded-horizontal subscribed yt-uix-tooltip" | grep -Eo "[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+" | head -n1)
+data_ini=$(date +%H:%M)
+function ctrl_c(){
+	printInformation
+	echo -e "-----------------------------"
+	echo -e "Inscritos Iniciais: $subs_init"
+	echo -e "Início: $data_ini  |  Término: `date +%H:%M`"
+	
+	subs=`echo $subs | sed 's/[.,-]//g'`
+	subs_init=`echo $subs_init | sed 's/[.,-]//g'`
+
+	if [[ $subs_init > $subs ]];then
+		echo "Perda: `echo $((subs_init - subs))` Inscritos"
+	elif [[ $subs_init < $subs ]];then
+		echo "Ganho: `echo $((subs - subs_init))` Inscritos"
+	else
+		echo "+ Não houve perdas e ganhos! +"
+	fi
+	exit
+}
+if [[ $1 != '--url' ]] || [[ $2 == '' ]];then echo "Parâmetro ou valor incorreto!";exit; fi
+while true;do
+	subs_new=$(curl -s $2 | grep "yt-subscription-button-subscriber-count-branded-horizontal subscribed yt-uix-tooltip" | grep -Eo "[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+" | head -n1)
+	
+	if [[ -n $subs_new ]]; then
+		subs=$subs_new
+	fi
+
+	printInformation
+	sleep 2s
+done
